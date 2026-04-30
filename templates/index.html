@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visualizador 3D de Ventas — Johan Bermudez</title>
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet' />
+
+  <style>
+    :root {
+      --bg:        #07090f;
+      --surface:   #0e1220;
+      --surface2:  #151b2e;
+      --border:    rgba(46,125,224,0.18);
+      --blue:      #2e7de0;
+      --blue-dim:  #1456b4;
+      --blue-pale: rgba(46,125,224,0.10);
+      --cyan:      #38d9f5;
+      --green:     #22c55e;
+      --red:       #f43f5e;
+      --text:      #e8edf8;
+      --muted:     #6b7a99;
+      --font-h:    'Syne', sans-serif;
+      --font-m:    'DM Mono', monospace;
+      --radius:    10px;
+      --glow:      0 0 28px rgba(46,125,224,0.28);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-h);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(46,125,224,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(46,125,224,.035) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none; z-index: 0;
+    }
+
+    /* ── Header ── */
+    header {
+      position: relative; z-index: 10;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 36px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(14,18,32,0.9);
+      backdrop-filter: blur(12px);
+    }
+    .h-brand { display: flex; align-items: center; gap: 12px; }
+    .h-icon {
+      width: 36px; height: 36px; background: var(--blue);
+      border-radius: 8px; display: grid; place-items: center; font-size: 20px; color: #fff;
+    }
+    .h-title { font-size: 1rem; font-weight: 700; }
+    .h-sub { font-size: .7rem; color: var(--muted); font-family: var(--font-m); margin-top: 2px; }
+    .h-badge {
+      font-family: var(--font-m); font-size: .7rem; color: var(--cyan);
+      border: 1px solid rgba(56,217,245,.22); padding: 4px 12px;
+      border-radius: 20px; background: rgba(56,217,245,.06);
+    }
+
+    /* ── Views ── */
+    .view { display: none; }
+    .view.active { display: flex; }
+
+    /* ─────────────────────────────────────────────
+       VISTA 1: UPLOAD
+    ───────────────────────────────────────────── */
+    #view-upload {
+      flex-direction: column; align-items: center; justify-content: center;
+      min-height: calc(100vh - 61px);
+      gap: 32px; padding: 40px 20px;
+      position: relative; z-index: 1;
+    }
+
+    .upload-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 52px;
+      max-width: 540px; width: 100%;
+      text-align: center;
+      box-shadow: var(--glow);
+    }
+
+    .upload-icon { font-size: 2.8rem; margin-bottom: 16px; display: block; color: var(--blue); }
+
+    .upload-card h2 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+
+    .upload-card p {
+      color: var(--muted); font-size: .88rem;
+      line-height: 1.6; margin-bottom: 28px;
+    }
+
+    .drop-zone {
+      border: 2px dashed rgba(46,125,224,0.4);
+      border-radius: var(--radius);
+      padding: 36px 24px;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+      border-color: var(--blue);
+      background: var(--blue-pale);
+    }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-zone-label { font-size: .9rem; color: var(--muted); pointer-events: none; }
+    .drop-zone-label span { color: var(--blue); font-weight: 600; }
+    .drop-zone-filename { font-family: var(--font-m); font-size: .82rem; color: var(--cyan); margin-top: 8px; }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 11px 24px; border-radius: var(--radius);
+      font-family: var(--font-h); font-weight: 700; font-size: .88rem;
+      cursor: pointer; border: none; transition: .2s;
+    }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-primary:hover { background: #1a6dd4; box-shadow: var(--glow); }
+    .btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+    .btn-ghost {
+      background: transparent; color: var(--muted);
+      border: 1px solid var(--border); font-size: .8rem;
+    }
+    .btn-ghost:hover { border-color: var(--blue); color: var(--text); }
+
+    .upload-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+
+    .error-msg {
+      background: rgba(244,63,94,.1); border: 1px solid rgba(244,63,94,.3);
+      color: #f87171; border-radius: 8px; padding: 10px 14px;
+      font-size: .82rem; font-family: var(--font-m); margin-top: 12px;
+      display: none;
+    }
+
+    /* ─────────────────────────────────────────────
+       VISTA 3: DASHBOARD
+    ───────────────────────────────────────────── */
+    #view-dashboard {
+      flex-direction: row;
+      height: calc(100vh - 61px);
+      position: relative; z-index: 1;
+    }
+
+    .sidebar {
+      width: 270px; min-width: 270px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 22px 18px;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 24px;
+    }
+
+    .s-title {
+      font-size: .65rem; font-family: var(--font-m);
+      color: var(--blue); letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+    }
+    .s-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .kpis { display: flex; flex-direction: column; gap: 8px; }
+    .kpi {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 10px 14px;
+      transition: border-color .2s;
+    }
+    .kpi:hover { border-color: var(--blue); }
+    .kpi-label { font-family: var(--font-m); font-size: .65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+    .kpi-val { font-size: 1.2rem; font-weight: 800; color: var(--cyan); font-family: var(--font-m); margin-top: 3px; }
+
+    .filter-options { display: flex; flex-direction: column; gap: 5px; max-height: 140px; overflow-y: auto; }
+    .filter-options label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .8rem; cursor: pointer;
+      padding: 4px 7px; border-radius: 6px; transition: background .15s;
+    }
+    .filter-options label:hover { background: var(--blue-pale); }
+    .filter-options input[type="checkbox"] { accent-color: var(--blue); }
+
+    .sidebar-actions { margin-top: auto; display: flex; flex-direction: column; gap: 8px; }
+
+    .chart-wrap { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .chart-top {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 24px; border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .chart-title-text { font-size: .95rem; font-weight: 700; }
+    .chart-meta { font-family: var(--font-m); font-size: .7rem; color: var(--muted); }
+
+    #plot { flex: 1; min-height: 0; }
+
+    .overlay {
+      position: absolute; inset: 0;
+      background: rgba(7,9,15,.75);
+      display: grid; place-items: center;
+      z-index: 50; opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .overlay.on { opacity: 1; pointer-events: all; }
+    .spinner {
+      width: 38px; height: 38px;
+      border: 3px solid var(--border); border-top-color: var(--blue);
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ─────────────────────────────────────────────
+       MODAL DE CONFIGURACIÓN DE EJES
+    ───────────────────────────────────────────── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(7,9,15,0.85);
+      backdrop-filter: blur(8px);
+      z-index: 100;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .3s ease;
+    }
+    .modal-backdrop.open { opacity: 1; pointer-events: all; }
+
+    .modal-config {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%; max-width: 640px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6), var(--glow);
+      transform: translateY(20px) scale(0.97);
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+    }
+    .modal-backdrop.open .modal-config {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 24px 28px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-header h2 { font-size: 1.2rem; font-weight: 800; }
+    .modal-subtitle { font-family: var(--font-m); font-size: .75rem; color: var(--muted); margin-top: 4px; }
+
+    .modal-close {
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--muted); width: 32px; height: 32px; border-radius: 8px;
+      display: grid; place-items: center; cursor: pointer; transition: .2s;
+    }
+    .modal-close:hover { background: var(--red); color: #fff; border-color: var(--red); }
+
+    .modal-body { padding: 24px 28px; }
+
+    .config-file-info {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--blue-pale); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px; margin-bottom: 24px;
+      font-family: var(--font-m); font-size: .8rem;
+    }
+
+    .section-label {
+      font-size: .68rem; font-family: var(--font-m);
+      color: var(--blue); letter-spacing: 2px; text-transform: uppercase;
+      margin-bottom: 12px; display: flex; align-items: center; gap: 8px;
+    }
+    .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .axis-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+
+    .axis-item { display: flex; flex-direction: column; gap: 6px; }
+    .axis-item label { font-family: var(--font-m); font-size: .7rem; color: var(--blue); text-transform: uppercase; }
+    
+    /* ── Selectores de ejes ── */
+    .axis-item select, .config-select {
+      background: var(--surface2); 
+      border: 1px solid var(--border);
+      color: var(--text); 
+      font-family: var(--font-m); 
+      font-size: .8rem;
+      padding: 8px 10px; 
+      border-radius: 8px; 
+      outline: none; 
+      cursor: pointer;
+      transition: border-color .2s, background .2s; 
+      width: 100%;
+    }
+    .axis-item select:focus, .config-select:focus { border-color: var(--blue); }
+    
+    /* CORRECCIÓN: Asegurar que el texto de las opciones siempre sea legible */
+    .axis-item select option {
+      background: var(--surface2);
+      color: var(--text);
+    }
+    
+    /* Estados de validación - solo afectan el borde y fondo, NUNCA el color del texto */
+    .axis-item select.error { 
+      border-color: var(--red); 
+      background: rgba(244,63,94,.08); 
+    }
+    .axis-item select.error option {
+      background: var(--surface2);
+      color: var(--text);
+    }
+    .axis-item select.valid { 
+      border-color: var(--green); 
+    }
+    .axis-item select.valid option {
+      background: var(--surface2);
+      color: var(--text);
+    }
+
+    .color-row { margin-bottom: 24px; }
+    .color-row label { font-family: var(--font-m); font-size: .7rem; color: var(--blue); text-transform: uppercase; display: block; margin-bottom: 6px; }
+
+    .validation-msg {
+      font-family: var(--font-m); font-size: .75rem;
+      padding: 8px 12px; border-radius: 6px; margin-bottom: 16px;
+      display: none; align-items: center; gap: 6px;
+    }
+    .validation-msg.error {
+      display: flex;
+      background: rgba(244,63,94,.1); border: 1px solid rgba(244,63,94,.3);
+      color: #f87171;
+    }
+    .validation-msg.ok {
+      display: flex;
+      background: rgba(34,197,94,.1); border: 1px solid rgba(34,197,94,.3);
+      color: #4ade80;
+    }
+
+    .preview-section { margin-top: 20px; }
+    .preview-table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+    .preview-table {
+      width: 100%; border-collapse: collapse;
+      font-family: var(--font-m); font-size: .72rem;
+    }
+    .preview-table th {
+      background: var(--surface2); color: var(--blue);
+      padding: 8px 12px; text-align: left;
+      font-weight: 500; border-bottom: 1px solid var(--border);
+    }
+    .preview-table td {
+      padding: 7px 12px; color: var(--muted);
+      border-bottom: 1px solid rgba(46,125,224,.07);
+    }
+    .preview-table tr:last-child td { border-bottom: none; }
+
+    .modal-footer {
+      display: flex; gap: 10px; justify-content: flex-end;
+      padding: 16px 28px 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--blue-dim); border-radius: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="h-brand">
+    <div class="h-icon"><i class="bx bx-bar-chart-square"></i></div>
+    <div>
+      <div class="h-title">Visualizador 3D de Ventas</div>
+    </div>
+  </div>
+  <div class="h-badge">Johan Bermudez · Portafolio</div>
+</header>
+
+<!-- ══════════════════════════════════════════
+     VISTA 1: UPLOAD
+══════════════════════════════════════════ -->
+<div id="view-upload" class="view active">
+  <div class="upload-card">
+    <span class="upload-icon"><i class="bx bx-bar-chart"></i></span>
+    <h2>Carga tu dataset</h2>
+    <p>Sube un archivo <strong>.csv</strong> para comenzar. Luego podrás
+       configurar qué columnas se mostrarán en los ejes del gráfico 3D.</p>
+
+    <div class="drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept=".csv" />
+      <div class="drop-zone-label">
+        <i class="bx bx-cloud-upload" style="font-size:1.8rem;color:var(--blue);display:block;margin-bottom:10px;pointer-events:none;"></i>
+        Arrastra tu CSV aquí o <span>haz clic para seleccionarlo</span>
+      </div>
+      <div class="drop-zone-filename" id="drop-filename"></div>
+    </div>
+
+    <div class="upload-actions">
+      <button class="btn btn-primary" id="btn-upload" disabled>
+        <i class="bx bx-upload"></i> Cargar y continuar
+      </button>
+      <a href="/api/upload/sample" class="btn btn-ghost">
+        <i class="bx bx-download"></i> Descargar CSV de ejemplo
+      </a>
+    </div>
+
+    <div class="error-msg" id="upload-error"></div>
+  </div>
+</div>
+
+<!-- ═════════════════────────────────────────═
+     VISTA 3: DASHBOARD
+══════════════════════════════════════════ -->
+<div id="view-dashboard" class="view">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <!-- KPIs dinámicos -->
+    <div>
+      <div class="s-title">Resumen</div>
+      <div class="kpis" id="kpi-container"></div>
+    </div>
+
+    <!-- Filtros dinámicos -->
+    <div id="filtros-container"></div>
+
+    <div class="sidebar-actions">
+      <button class="btn btn-primary" id="btn-apply"><i class="bx bx-filter"></i> Aplicar filtros</button>
+      <button class="btn btn-ghost" id="btn-open-config"><i class="bx bx-slider"></i> Reconfigurar ejes</button>
+      <button class="btn btn-ghost" id="btn-new-file"><i class="bx bx-upload"></i> Nuevo archivo</button>
+    </div>
+  </aside>
+
+  <!-- Chart -->
+  <div class="chart-wrap" style="position:relative;">
+    <div class="chart-top">
+      <div class="chart-title-text">Dispersión 3D — Correlación de métricas</div>
+      <div class="chart-meta" id="chart-meta">—</div>
+    </div>
+    <div id="plot"></div>
+    <div class="overlay" id="loading"><div class="spinner"></div></div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL DE CONFIGURACIÓN DE EJES
+══════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modal-config">
+  <div class="modal-config">
+    <div class="modal-header">
+      <div>
+        <h2>Configura los ejes</h2>
+        <div class="modal-subtitle">Selecciona qué columnas se mostrarán en cada eje del gráfico 3D</div>
+      </div>
+      <button class="modal-close" id="btn-modal-close"><i class="bx bx-x"></i></button>
+    </div>
+
+    <div class="modal-body">
+      <div class="config-file-info" id="config-file-info">
+        <i class="bx bx-file" style="color:var(--blue)"></i>
+        <span id="cfg-filename">—</span> &nbsp;·&nbsp;
+        <span id="cfg-filas">—</span> filas &nbsp;·&nbsp;
+        <span id="cfg-cols">—</span> columnas
+      </div>
+
+      <div class="section-label">Ejes del gráfico 3D</div>
+      <div class="axis-grid">
+        <div class="axis-item">
+          <label>Eje X</label>
+          <select id="cfg-eje-x"></select>
+        </div>
+        <div class="axis-item">
+          <label>Eje Y</label>
+          <select id="cfg-eje-y"></select>
+        </div>
+        <div class="axis-item">
+          <label>Eje Z</label>
+          <select id="cfg-eje-z"></select>
+        </div>
+      </div>
+
+      <!-- Mensaje de validación dinámico -->
+      <div class="validation-msg" id="axis-validation-msg">
+        <i class="bx bx-error-circle"></i>
+        <span id="axis-validation-text"></span>
+      </div>
+
+      <div class="color-row">
+        <div class="section-label">Agrupar colores por</div>
+        <select class="config-select" id="cfg-color"></select>
+      </div>
+
+      <div class="preview-section">
+        <div class="section-label">Vista previa (5 filas)</div>
+        <div class="preview-table-wrap">
+          <table class="preview-table" id="preview-table"></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="btn-cancel-config"><i class="bx bx-x"></i> Cancelar</button>
+      <button class="btn btn-primary" id="btn-save-config"><i class="bx bx-check"></i> Guardar y actualizar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script>
+  // ── Estado global ─────────────────────────────────────
+  const STATE = {
+    numericCols:     [],
+    categoricalCols: [],
+    preview:         [],
+    filename:        '',
+    filas:           0,
+    ejex: '', ejey: '', ejez: '',
+    colorPor: '',
+    filtros: {},
+  };
+
+  const PALETTE = ['#2e7de0','#38d9f5','#f5a623','#e84040','#7c3aed','#22c55e','#f43f5e','#fb923c'];
+
+  // ── Utilidades ────────────────────────────────────────
+  const $ = id => document.getElementById(id);
+  const show = id => { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); $(id).classList.add('active'); };
+  const setLoad = on => $('loading').classList.toggle('on', on);
+
+  function fmtNum(n) {
+    if (n >= 1_000_000) return (n/1_000_000).toFixed(1)+'M';
+    if (n >= 1_000)     return (n/1_000).toFixed(1)+'K';
+    return n.toString();
+  }
+
+  function showError(elId, msg) {
+    const el = $(elId);
+    el.textContent = msg;
+    el.style.display = msg ? 'block' : 'none';
+  }
+
+  function buildSelect(selectEl, options, selectedIndex = 0) {
+    selectEl.innerHTML = '';
+    options.forEach((opt, i) => {
+      const o = document.createElement('option');
+      o.value = opt; o.textContent = opt;
+      if (i === selectedIndex) o.selected = true;
+      selectEl.appendChild(o);
+    });
+  }
+
+  // ── Validación de ejes ────────────────────────────────
+  function validateAxes() {
+    const x = $('cfg-eje-x').value;
+    const y = $('cfg-eje-y').value;
+    const z = $('cfg-eje-z').value;
+    const msgEl = $('axis-validation-msg');
+    const textEl = $('axis-validation-text');
+
+    const used = new Set();
+    const duplicates = [];
+    [x, y, z].forEach(v => { if (used.has(v)) duplicates.push(v); else used.add(v); });
+
+    // Resetear estilos
+    ['cfg-eje-x','cfg-eje-y','cfg-eje-z'].forEach(id => {
+      $(id).classList.remove('error', 'valid');
+    });
+
+    if (duplicates.length > 0) {
+      const dupSet = [...new Set(duplicates)];
+      textEl.textContent = `Error: La columna "${dupSet.join(', ')}" está repetida en más de un eje. Cada eje debe tener una columna única.`;
+      msgEl.className = 'validation-msg error';
+
+      // Marcar los selects duplicados
+      [x, y, z].forEach((v, i) => {
+        if (dupSet.includes(v)) $(['cfg-eje-x','cfg-eje-y','cfg-eje-z'][i]).classList.add('error');
+      });
+
+      $('btn-save-config').disabled = true;
+      return false;
+    }
+
+    // Todo OK
+    textEl.textContent = 'Configuración válida. Las tres columnas son distintas.';
+    msgEl.className = 'validation-msg ok';
+    ['cfg-eje-x','cfg-eje-y','cfg-eje-z'].forEach(id => $(id).classList.add('valid'));
+    $('btn-save-config').disabled = false;
+    return true;
+  }
+
+  // ── Modal helpers ─────────────────────────────────────
+  function openModal() {
+    $('modal-config').classList.add('open');
+  }
+
+  function closeModal() {
+    $('modal-config').classList.remove('open');
+    // Limpiar validación al cerrar
+    $('axis-validation-msg').className = 'validation-msg';
+    ['cfg-eje-x','cfg-eje-y','cfg-eje-z'].forEach(id => $(id).classList.remove('error', 'valid'));
+  }
+
+  // ── VISTA 1: UPLOAD ───────────────────────────────────
+  const dropZone  = $('drop-zone');
+  const fileInput = $('file-input');
+  const btnUpload = $('btn-upload');
+
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files[0]) {
+      $('drop-filename').textContent = fileInput.files[0].name;
+      btnUpload.disabled = false;
+    }
+  });
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault(); dropZone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      fileInput.files = e.dataTransfer.files;
+      $('drop-filename').textContent = file.name;
+      btnUpload.disabled = false;
+    }
+  });
+
+  btnUpload.addEventListener('click', async () => {
+    showError('upload-error', '');
+    btnUpload.disabled = true;
+    btnUpload.innerHTML = '<i class="bx bx-loader-circle bx-spin"></i> Cargando...';
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+
+    try {
+      const res  = await fetch('/api/upload/csv', { method: 'POST', body: formData });
+      const data = await res.json();
+
+      if (!res.ok || data.error) {
+        showError('upload-error', data.error || 'Error al cargar el archivo.');
+        return;
+      }
+
+      STATE.numericCols     = data.columnas_numericas;
+      STATE.categoricalCols = data.columnas_categoricas;
+      STATE.preview         = data.preview;
+      STATE.filename        = data.filename;
+      STATE.filas           = data.filas;
+
+      STATE.ejex = STATE.numericCols[0] || '';
+      STATE.ejey = STATE.numericCols[1] || STATE.numericCols[0] || '';
+      STATE.ejez = STATE.numericCols[2] || STATE.numericCols[0] || '';
+      STATE.colorPor = STATE.categoricalCols[0] || '';
+
+      goToDashboard();
+
+    } catch (e) {
+      showError('upload-error', 'Error de conexión con el servidor.');
+    } finally {
+      btnUpload.disabled = false;
+      btnUpload.innerHTML = '<i class="bx bx-upload"></i> Cargar y continuar';
+    }
+  });
+
+  // ── MODAL: CONFIGURACIÓN ──────────────────────────────
+  function populateModal() {
+    $('cfg-filename').textContent = STATE.filename;
+    $('cfg-filas').textContent    = STATE.filas;
+    $('cfg-cols').textContent     = STATE.numericCols.length + STATE.categoricalCols.length;
+
+    buildSelect($('cfg-eje-x'), STATE.numericCols, 0);
+    buildSelect($('cfg-eje-y'), STATE.numericCols, Math.min(1, STATE.numericCols.length-1));
+    buildSelect($('cfg-eje-z'), STATE.numericCols, Math.min(2, STATE.numericCols.length-1));
+    buildSelect($('cfg-color'), ['(ninguno)', ...STATE.categoricalCols], 1);
+
+    buildPreviewTable();
+
+    if (STATE.ejex) $('cfg-eje-x').value = STATE.ejex;
+    if (STATE.ejey) $('cfg-eje-y').value = STATE.ejey;
+    if (STATE.ejez) $('cfg-eje-z').value = STATE.ejez;
+    if (STATE.colorPor) $('cfg-color').value = STATE.colorPor;
+    else $('cfg-color').value = '(ninguno)';
+
+    validateAxes();
+  }
+
+  function buildPreviewTable() {
+    if (!STATE.preview.length) return;
+    const cols = Object.keys(STATE.preview[0]);
+    const thead = `<thead><tr>${cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead>`;
+    const tbody = `<tbody>${STATE.preview.map(row =>
+      `<tr>${cols.map(c=>`<td>${row[c] ?? ''}</td>`).join('')}</tr>`
+    ).join('')}</tbody>`;
+    $('preview-table').innerHTML = thead + tbody;
+  }
+
+  $('btn-open-config').addEventListener('click', () => {
+    populateModal();
+    openModal();
+  });
+
+  $('btn-modal-close').addEventListener('click', closeModal);
+  $('btn-cancel-config').addEventListener('click', closeModal);
+
+  $('modal-config').addEventListener('click', e => {
+    if (e.target === $('modal-config')) closeModal();
+  });
+
+  ['cfg-eje-x','cfg-eje-y','cfg-eje-z'].forEach(id => {
+    $(id).addEventListener('change', validateAxes);
+  });
+
+  $('btn-save-config').addEventListener('click', async () => {
+    if (!validateAxes()) return;
+
+    STATE.ejex     = $('cfg-eje-x').value;
+    STATE.ejey     = $('cfg-eje-y').value;
+    STATE.ejez     = $('cfg-eje-z').value;
+    STATE.colorPor = $('cfg-color').value === '(ninguno)' ? '' : $('cfg-color').value;
+
+    closeModal();
+    await update();
+  });
+
+  // ── VISTA 3: DASHBOARD ────────────────────────────────
+  async function goToDashboard() {
+    show('view-dashboard');
+    setLoad(true);
+
+    try {
+      const res  = await fetch('/api/scatter/filtros');
+      const data = await res.json();
+
+      if (data.error) { alert(data.error); return; }
+
+      buildFilters(data.filtros);
+      buildKPICards(STATE.numericCols);
+      await update();
+
+    } finally {
+      setLoad(false);
+    }
+  }
+
+  function buildFilters(filtros) {
+    const container = $('filtros-container');
+    container.innerHTML = '';
+    STATE.filtros = {};
+
+    Object.entries(filtros).forEach(([col, valores]) => {
+      STATE.filtros[col] = [...valores];
+
+      const section = document.createElement('div');
+      section.innerHTML = `
+        <div class="s-title">${col}</div>
+        <div class="filter-options" id="filter-${col}">
+          ${valores.map(v => `
+            <label>
+              <input type="checkbox" value="${v}" data-col="${col}" checked />
+              ${v}
+            </label>
+          `).join('')}
+        </div>
+      `;
+      container.appendChild(section);
+    });
+  }
+
+  function buildKPICards(numCols) {
+    const container = $('kpi-container');
+    container.innerHTML = '';
+    numCols.slice(0, 3).forEach(col => {
+      const card = document.createElement('div');
+      card.className = 'kpi';
+      card.innerHTML = `
+        <div class="kpi-label">${col}</div>
+        <div class="kpi-val" id="kpi-${col}">—</div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function buildQueryString() {
+    const params = new URLSearchParams();
+    params.set('eje_x',    STATE.ejex);
+    params.set('eje_y',    STATE.ejey);
+    params.set('eje_z',    STATE.ejez);
+    if (STATE.colorPor) params.set('color_por', STATE.colorPor);
+
+    document.querySelectorAll('.filter-options input[type="checkbox"]:checked').forEach(cb => {
+      params.append(cb.dataset.col, cb.value);
+    });
+
+    return params.toString();
+  }
+
+  async function update() {
+    setLoad(true);
+    try {
+      const qs = buildQueryString();
+      const [scatterRes, kpisRes] = await Promise.all([
+        fetch(`/api/scatter/data?${qs}`),
+        fetch(`/api/scatter/kpis?${qs}`),
+      ]);
+      const scatterData = await scatterRes.json();
+      const kpisData    = await kpisRes.json();
+
+      if (scatterData.error) { $('chart-meta').textContent = scatterData.error; return; }
+
+      renderPlot(scatterData);
+      renderKPIs(kpisData);
+      $('chart-meta').textContent = `${scatterData.total_registros} registros · X:${STATE.ejex} · Y:${STATE.ejey} · Z:${STATE.ejez}`;
+
+    } catch(e) {
+      console.error(e);
+    } finally {
+      setLoad(false);
+    }
+  }
+
+  function renderPlot(data) {
+    const traces = data.traces.map((t, i) => ({
+      type: 'scatter3d', mode: 'markers',
+      name: t.name, x: t.x, y: t.y, z: t.z, text: t.text,
+      hovertemplate: `<b>${t.name}</b><br>${STATE.ejex}: %{x}<br>${STATE.ejey}: %{y}<br>${STATE.ejez}: %{z}<br>%{text}<extra></extra>`,
+      marker: {
+        size: 7, color: PALETTE[i % PALETTE.length],
+        opacity: .88, line: { color: 'rgba(255,255,255,0.12)', width: .5 }
+      }
+    }));
+
+    Plotly.react('plot', traces, {
+      paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+      margin: { l:0, r:0, t:0, b:0 },
+      legend: {
+        font: { color: '#e8edf8', family: 'DM Mono', size: 11 },
+        bgcolor: 'rgba(14,18,32,0.7)',
+        bordercolor: 'rgba(46,125,224,0.2)', borderwidth: 1,
+      },
+      scene: {
+        bgcolor: 'rgba(0,0,0,0)',
+        xaxis: axisLayout(STATE.ejex),
+        yaxis: axisLayout(STATE.ejey),
+        zaxis: axisLayout(STATE.ejez),
+      },
+    }, { responsive: true, displaylogo: false });
+  }
+
+  function axisLayout(title) {
+    return {
+      title: { text: title, font: { color: '#6b7a99', size: 11 } },
+      gridcolor: 'rgba(46,125,224,0.12)',
+      zerolinecolor: 'rgba(46,125,224,0.22)',
+      tickfont: { color: '#6b7a99', size: 9, family: 'DM Mono' },
+    };
+  }
+
+  function renderKPIs(data) {
+    if (data.error) return;
+    Object.entries(data.kpis).slice(0, 3).forEach(([col, vals]) => {
+      const el = $(`kpi-${col}`);
+      if (el) el.textContent = fmtNum(vals.suma);
+    });
+  }
+
+  $('btn-apply').addEventListener('click', update);
+  $('btn-new-file').addEventListener('click', () => {
+    fileInput.value = '';
+    $('drop-filename').textContent = '';
+    $('btn-upload').disabled = true;
+    show('view-upload');
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,73 @@
+id,marca,categoria,mes,unidades_vendidas,ingresos_cop,devoluciones,asesor,zona
+1,NutriVida,Lacteos,Enero,320,4800000,12,Carlos M.,Norte
+2,NutriVida,Lacteos,Febrero,410,6150000,8,Carlos M.,Norte
+3,NutriVida,Lacteos,Marzo,390,5850000,15,Carlos M.,Norte
+4,NutriVida,Lacteos,Abril,450,6750000,5,Carlos M.,Norte
+5,NutriVida,Lacteos,Mayo,500,7500000,10,Carlos M.,Norte
+6,NutriVida,Lacteos,Junio,480,7200000,7,Carlos M.,Norte
+7,NutriVida,Aceites,Enero,210,3150000,6,Laura P.,Sur
+8,NutriVida,Aceites,Febrero,280,4200000,9,Laura P.,Sur
+9,NutriVida,Aceites,Marzo,260,3900000,11,Laura P.,Sur
+10,NutriVida,Aceites,Abril,300,4500000,4,Laura P.,Sur
+11,NutriVida,Aceites,Mayo,340,5100000,8,Laura P.,Sur
+12,NutriVida,Aceites,Junio,320,4800000,6,Laura P.,Sur
+13,FrescoCampo,Granos,Enero,540,2700000,20,Andrés R.,Oriente
+14,FrescoCampo,Granos,Febrero,610,3050000,15,Andrés R.,Oriente
+15,FrescoCampo,Granos,Marzo,580,2900000,22,Andrés R.,Oriente
+16,FrescoCampo,Granos,Abril,670,3350000,18,Andrés R.,Oriente
+17,FrescoCampo,Granos,Mayo,720,3600000,12,Andrés R.,Oriente
+18,FrescoCampo,Granos,Junio,700,3500000,14,Andrés R.,Oriente
+19,FrescoCampo,Enlatados,Enero,180,2160000,7,Diana V.,Occidente
+20,FrescoCampo,Enlatados,Febrero,220,2640000,10,Diana V.,Occidente
+21,FrescoCampo,Enlatados,Marzo,200,2400000,8,Diana V.,Occidente
+22,FrescoCampo,Enlatados,Abril,260,3120000,5,Diana V.,Occidente
+23,FrescoCampo,Enlatados,Mayo,290,3480000,9,Diana V.,Occidente
+24,FrescoCampo,Enlatados,Junio,270,3240000,6,Diana V.,Occidente
+25,PanAndino,Harinas,Enero,430,3440000,16,Miguel S.,Norte
+26,PanAndino,Harinas,Febrero,470,3760000,12,Miguel S.,Norte
+27,PanAndino,Harinas,Marzo,460,3680000,18,Miguel S.,Norte
+28,PanAndino,Harinas,Abril,510,4080000,10,Miguel S.,Norte
+29,PanAndino,Harinas,Mayo,560,4480000,14,Miguel S.,Norte
+30,PanAndino,Harinas,Junio,540,4320000,11,Miguel S.,Norte
+31,PanAndino,Lacteos,Enero,370,5550000,14,Sofia L.,Sur
+32,PanAndino,Lacteos,Febrero,390,5850000,10,Sofia L.,Sur
+33,PanAndino,Lacteos,Marzo,410,6150000,12,Sofia L.,Sur
+34,PanAndino,Lacteos,Abril,440,6600000,8,Sofia L.,Sur
+35,PanAndino,Lacteos,Mayo,480,7200000,9,Sofia L.,Sur
+36,PanAndino,Lacteos,Junio,460,6900000,11,Sofia L.,Sur
+37,CasaFeliz,Aseo,Enero,620,4340000,25,Ricardo B.,Oriente
+38,CasaFeliz,Aseo,Febrero,680,4760000,20,Ricardo B.,Oriente
+39,CasaFeliz,Aseo,Marzo,650,4550000,28,Ricardo B.,Oriente
+40,CasaFeliz,Aseo,Abril,710,4970000,18,Ricardo B.,Oriente
+41,CasaFeliz,Aseo,Mayo,760,5320000,22,Ricardo B.,Oriente
+42,CasaFeliz,Aseo,Junio,740,5180000,19,Ricardo B.,Oriente
+43,CasaFeliz,Cuidado Personal,Enero,290,4350000,10,Valentina C.,Occidente
+44,CasaFeliz,Cuidado Personal,Febrero,310,4650000,8,Valentina C.,Occidente
+45,CasaFeliz,Cuidado Personal,Marzo,330,4950000,12,Valentina C.,Occidente
+46,CasaFeliz,Cuidado Personal,Abril,360,5400000,7,Valentina C.,Occidente
+47,CasaFeliz,Cuidado Personal,Mayo,400,6000000,9,Valentina C.,Occidente
+48,CasaFeliz,Cuidado Personal,Junio,380,5700000,10,Valentina C.,Occidente
+49,NutriVida,Granos,Enero,490,2450000,18,Carlos M.,Norte
+50,NutriVida,Granos,Febrero,530,2650000,14,Carlos M.,Norte
+51,NutriVida,Granos,Marzo,510,2550000,20,Carlos M.,Norte
+52,NutriVida,Granos,Abril,570,2850000,15,Carlos M.,Norte
+53,NutriVida,Granos,Mayo,620,3100000,11,Carlos M.,Norte
+54,NutriVida,Granos,Junio,600,3000000,13,Carlos M.,Norte
+55,FrescoCampo,Lacteos,Enero,280,4200000,10,Laura P.,Sur
+56,FrescoCampo,Lacteos,Febrero,310,4650000,8,Laura P.,Sur
+57,FrescoCampo,Lacteos,Marzo,295,4425000,12,Laura P.,Sur
+58,FrescoCampo,Lacteos,Abril,340,5100000,7,Laura P.,Sur
+59,FrescoCampo,Lacteos,Mayo,370,5550000,9,Laura P.,Sur
+60,FrescoCampo,Lacteos,Junio,355,5325000,8,Laura P.,Sur
+61,PanAndino,Aceites,Enero,195,2925000,7,Andrés R.,Oriente
+62,PanAndino,Aceites,Febrero,230,3450000,10,Andrés R.,Oriente
+63,PanAndino,Aceites,Marzo,215,3225000,8,Andrés R.,Oriente
+64,PanAndino,Aceites,Abril,255,3825000,5,Andrés R.,Oriente
+65,PanAndino,Aceites,Mayo,280,4200000,7,Andrés R.,Oriente
+66,PanAndino,Aceites,Junio,265,3975000,6,Andrés R.,Oriente
+67,CasaFeliz,Enlatados,Enero,160,1920000,6,Diana V.,Occidente
+68,CasaFeliz,Enlatados,Febrero,185,2220000,8,Diana V.,Occidente
+69,CasaFeliz,Enlatados,Marzo,175,2100000,7,Diana V.,Occidente
+70,CasaFeliz,Enlatados,Abril,210,2520000,5,Diana V.,Occidente
+71,CasaFeliz,Enlatados,Mayo,235,2820000,6,Diana V.,Occidente
+72,CasaFeliz,Enlatados,Junio,220,2640000,7,Diana V.,Occidente
